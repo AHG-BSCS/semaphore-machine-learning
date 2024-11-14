@@ -1,0 +1,6 @@
+train: ../dataset/images/train
+val: ../dataset/images/valid
+test: ../dataset/images/test
+
+nc: 5
+names: ['A', 'Bendera-Semaphore', 'C', 'D', 'E']
