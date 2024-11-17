@@ -1,0 +1,15 @@
+#webcam-box {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    width: 640px;
+    height: 480px;
+    background-color: #f8f8f8;
+}
+
+#webcam-box video {
+    border-radius: 8px;
+}
