@@ -1,0 +1,47 @@
+flip_idx:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+kpt_shape:
+- 6
+- 3
+names:
+- A
+- B
+- C
+- D
+- E
+- F
+- G
+- H
+- I
+- J
+- K
+- L
+- M
+- N
+- O
+- P
+- Q
+- R
+- S
+- T
+- U
+- V
+- W
+- X
+- Y
+- Z
+nc: 26
+roboflow:
+  license: CC BY 4.0
+  project: semaphore-pero-keypoint-2
+  url: https://universe.roboflow.com/ahg-superconductor/semaphore-pero-keypoint-2/dataset/1
+  version: 1
+  workspace: ahg-superconductor
+test: ../test/images
+train: ../train/images
+val: ../valid/images
