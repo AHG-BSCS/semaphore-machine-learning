@@ -1,14 +1,15 @@
-from flask import Flask, request, render_template, send_file, Response
-from werkzeug.utils import secure_filename
 import io
-from ultralytics import YOLO
 import numpy as np
-from PIL import Image
-from PIL import ImageOps
 import cv2
 import os
-import webbrowser
 import time
+import base64
+import webbrowser
+from flask import Flask, jsonify, request, render_template, send_file, Response
+from werkzeug.utils import secure_filename
+from ultralytics import YOLO
+from PIL import Image
+from PIL import ImageOps
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -48,11 +49,11 @@ def index():
 @app.route('/object-detection/', methods=['POST'])
 def apply_detection():
     if 'image' not in request.files:
-        return 'No file part'
+        return jsonify({"error": "No file part"})
 
     file = request.files['image']
     if file.filename == '':
-        return 'No selected file'
+        return jsonify({"error": "No selected file"})
 
     if file:
         filename = secure_filename(file.filename)
@@ -74,11 +75,17 @@ def apply_detection():
 
         os.remove(file_path)
 
-        return send_file(buf, mimetype='image/png')
+        img_str = base64.b64encode(buf.read()).decode('utf-8')
 
-@app.route('/video')
-def index_video():
-    return render_template('video.html')
+        return jsonify({"result_img": img_str})
+
+@app.route('/live_video.html')
+def live_video():
+    return render_template('live_video.html')
+
+@app.route('/img_classification.html')
+def img_classification():
+    return render_template('img_classification.html')
 
 def gen_frames():
     cap = cv2.VideoCapture(0)
@@ -100,7 +107,6 @@ def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    #Static Inference webbrowser.open("http://localhost:8000/")
-    webbrowser.open("http://localhost:8000/video")
+    webbrowser.open("http://localhost:8000/")
     time.sleep(1)
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)
