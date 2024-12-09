@@ -4,6 +4,7 @@ import io
 from ultralytics import YOLO
 import numpy as np
 from PIL import Image
+from PIL import ImageOps
 import cv2
 import os
 import webbrowser
@@ -12,17 +13,15 @@ import time
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
-
 class Detection:
     def __init__(self):
-        self.model = YOLO(r"best.pt")
+        self.model = YOLO(r"model\best.pt")
 
     def predict(self, img, classes=[], conf=0.5):
         if classes:
             results = self.model.predict(img, classes=classes, conf=conf)
         else:
             results = self.model.predict(img, conf=conf)
-
         return results
 
     def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1):
@@ -40,14 +39,11 @@ class Detection:
         result_img, _ = self.predict_and_detect(image, classes=[], conf=0.5)
         return result_img
 
-
 detection = Detection()
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 @app.route('/object-detection/', methods=['POST'])
 def apply_detection():
@@ -64,9 +60,12 @@ def apply_detection():
         file.save(file_path)
 
         img = Image.open(file_path).convert("RGB")
+        img = ImageOps.exif_transpose(img)
         img = np.array(img)
-        img = cv2.resize(img, (512, 512))
-        img = detection.detect_from_image(img)
+        img = cv2.resize(img, (640, 640))
+
+        img, results = detection.predict_and_detect(img, classes=[], conf=0.25)
+
         output = Image.fromarray(img)
 
         buf = io.BytesIO()
@@ -74,19 +73,18 @@ def apply_detection():
         buf.seek(0)
 
         os.remove(file_path)
-        return send_file(buf, mimetype='image/png')
 
+        return send_file(buf, mimetype='image/png')
 
 @app.route('/video')
 def index_video():
     return render_template('video.html')
 
-
 def gen_frames():
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
         ret, frame = cap.read()
-        frame = cv2.resize(frame, (512, 512))
+        frame = cv2.resize(frame, (640, 640))
         if frame is None:
             break
         frame = detection.detect_from_image(frame)
@@ -97,12 +95,12 @@ def gen_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    webbrowser.open("http://localhost:8000")
+    #Static Inference webbrowser.open("http://localhost:8000/")
+    webbrowser.open("http://localhost:8000/video")
     time.sleep(1)
     app.run(host="0.0.0.0", port=8000)
