@@ -1,4 +1,3 @@
-import io
 import numpy as np
 import cv2
 import os
@@ -8,8 +7,6 @@ import webbrowser
 from flask import Flask, jsonify, request, render_template, send_file, Response
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
-from PIL import Image
-from PIL import ImageOps
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -27,14 +24,23 @@ class Detection:
 
     def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1):
         results = self.predict(img, classes, conf=conf)
+        detection_info = []
         for result in results:
             for box in result.boxes:
+                label = result.names[int(box.cls[0])]
+                confidence = float(box.conf[0])  # Get confidence level
+                detection_info.append({
+                    'label': label,
+                    'confidence': confidence
+                })
                 cv2.rectangle(img, (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
-                          (int(box.xyxy[0][2]), int(box.xyxy[0][3])), (0, 255, 0), rectangle_thickness)
-                cv2.putText(img, f"{result.names[int(box.cls[0])]}",
+                            (int(box.xyxy[0][2]), int(box.xyxy[0][3])), (0, 255, 0), rectangle_thickness)
+                cv2.rectangle(img, (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 30), 
+                            (int(box.xyxy[0][0]) + 120, int(box.xyxy[0][1]) - 5), (0, 255, 0), -1)
+                cv2.putText(img, f"{label} {confidence:.2f}",
                             (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 10),
-                            cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), text_thickness)
-        return img, results
+                            cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), text_thickness)
+        return img, detection_info
 
     def detect_from_image(self, image):
         result_img, _ = self.predict_and_detect(image, classes=[], conf=0.5)
@@ -61,17 +67,14 @@ def apply_detection():
         file.save(file_path)
 
         try:
-            # Read and resize the image
             img = cv2.imread(file_path)
             if img is None:
                 raise ValueError("Failed to read the image.")
 
             img = cv2.resize(img, (640, 640))
 
-            # Process the image
             img = detection.detect_from_image(img)
 
-            # Encode the processed image to base64
             _, buffer = cv2.imencode('.png', img)
             img_base64 = base64.b64encode(buffer).decode('utf-8')
         except Exception as e:
@@ -79,7 +82,6 @@ def apply_detection():
         finally:
             os.remove(file_path)
 
-        # Return the base64 string
         return jsonify({"result_img": img_base64}), 200
 
 @app.route('/live_video.html')
