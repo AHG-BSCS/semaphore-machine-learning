@@ -49,35 +49,38 @@ def index():
 @app.route('/object-detection/', methods=['POST'])
 def apply_detection():
     if 'image' not in request.files:
-        return jsonify({"error": "No file part"})
+        return jsonify({"error": "No file part"}), 400
 
     file = request.files['image']
     if file.filename == '':
-        return jsonify({"error": "No selected file"})
+        return jsonify({"error": "No selected file"}), 400
 
     if file:
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        img = Image.open(file_path).convert("RGB")
-        img = ImageOps.exif_transpose(img)
-        img = np.array(img)
-        img = cv2.resize(img, (640, 640))
+        try:
+            # Read and resize the image
+            img = cv2.imread(file_path)
+            if img is None:
+                raise ValueError("Failed to read the image.")
 
-        img, results = detection.predict_and_detect(img, classes=[], conf=0.25)
+            img = cv2.resize(img, (640, 640))
 
-        output = Image.fromarray(img)
+            # Process the image
+            img = detection.detect_from_image(img)
 
-        buf = io.BytesIO()
-        output.save(buf, format="PNG")
-        buf.seek(0)
+            # Encode the processed image to base64
+            _, buffer = cv2.imencode('.png', img)
+            img_base64 = base64.b64encode(buffer).decode('utf-8')
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        finally:
+            os.remove(file_path)
 
-        os.remove(file_path)
-
-        img_str = base64.b64encode(buf.read()).decode('utf-8')
-
-        return jsonify({"result_img": img_str})
+        # Return the base64 string
+        return jsonify({"result_img": img_base64}), 200
 
 @app.route('/live_video.html')
 def live_video():
@@ -109,4 +112,4 @@ def video_feed():
 if __name__ == '__main__':
     webbrowser.open("http://localhost:8000/")
     time.sleep(1)
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000)
