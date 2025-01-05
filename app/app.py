@@ -14,6 +14,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads/'
 class Detection:
     def __init__(self):
         self.model = YOLO(r"model\best.pt")
+        self.latest_detection = "No detections"
 
     def predict(self, img, classes=[], conf=0.5):
         if classes:
@@ -40,6 +41,11 @@ class Detection:
                 cv2.putText(img, f"{label} {confidence:.2f}",
                             (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 10),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), text_thickness)
+        # Update the latest detection
+        if detection_info:
+            self.latest_detection = detection_info[0]['label']
+        else:
+            self.latest_detection = "No detections"
         return img, detection_info
 
     def detect_from_image(self, image):
@@ -73,16 +79,22 @@ def apply_detection():
 
             img = cv2.resize(img, (640, 640))
 
-            img = detection.detect_from_image(img)
+            img, detection_info = detection.predict_and_detect(img)
 
             _, buffer = cv2.imencode('.png', img)
             img_base64 = base64.b64encode(buffer).decode('utf-8')
+
+            detected_text = detection.latest_detection 
+
         except Exception as e:
             return jsonify({"error": str(e)}), 500
         finally:
             os.remove(file_path)
 
-        return jsonify({"result_img": img_base64}), 200
+        return jsonify({
+            "result_img": img_base64,
+            "detected_text": detected_text 
+        }), 200
 
 @app.route('/live_video.html')
 def live_video():
@@ -92,6 +104,10 @@ def live_video():
 def img_classification():
     return render_template('img_classification.html')
 
+@app.route('/get_detection_result')
+def get_detection_result():
+    return jsonify({'letter': detection.latest_detection})
+
 def gen_frames():
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
@@ -99,7 +115,7 @@ def gen_frames():
         frame = cv2.resize(frame, (640, 640))
         if frame is None:
             break
-        frame = detection.detect_from_image(frame)
+        frame, _ = detection.predict_and_detect(frame)
 
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()

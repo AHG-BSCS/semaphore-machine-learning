@@ -5,19 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet">
     <title>Image Classification</title>
+    <style>
+        .relative-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .image-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .detection-text {
+            position: absolute;
+            top: 50%;
+            right: -200px;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: black;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900">
     <nav class="bg-white border-gray-200 dark:bg-gray-900">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
-            <img src="../static/images/logo-semarec.png" class="h-8" alt="AHG" />
-            <img src="../static/images/ahg.png" class="h-8" alt="AHG" />
-            <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">SemaREC</span>
-        </a>
+            <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <img src="../static/images/logo-semarec.png" class="h-8" alt="AHG" />
+                <img src="../static/images/ahg.png" class="h-8" alt="AHG" />
+                <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">SemaREC</span>
+            </a>
         </div>
-      </nav>
+    </nav>
 
-    <main class="flex items-center justify-center min-h-screen p-6">
+    <main class="flex flex-col items-center justify-center min-h-screen p-6 space-y-8">
         <div class="w-full max-w-lg bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700">
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="flex items-center justify-center w-full p-6">
@@ -36,12 +82,31 @@
                 </div>
             </form>
         </div>
+
+        <div id="resultImageContainer" class="flex justify-center items-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400">No image uploaded yet.</p>
+        </div>
     </main>
 
-    <!-- Display result image here -->
-    <div class="flex justify-center p-4" id="resultImageContainer">
-        <!-- The result image will be inserted here -->
-    </div>
+    <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
+        <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <a href="/" class="flex items-center mb-4 sm:mb-0 space-x-3 rtl:space-x-reverse">
+                    <img src="../static/images/ahg.png" class="h-8" alt="AHG Logo" />
+                    <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">AHG</span>
+                </a>
+                <ul class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-500 sm:mb-0 dark:text-gray-400">
+                    <li>
+                        <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+            <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">
+                © 2025 <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Al Hans Gaming</a>. All Rights Reserved.
+            </span>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
     <script>
@@ -49,20 +114,34 @@
             const formData = new FormData();
             const fileInput = document.getElementById('image-upload');
             formData.append("image", fileInput.files[0]);
-
+    
+            const resultContainer = document.getElementById('resultImageContainer');
+            resultContainer.innerHTML = `<div class="loading-spinner"></div>`;
+    
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/object-detection/", true);
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     const response = JSON.parse(xhr.responseText);
-                    // Dynamically insert the result image
-                    document.getElementById('resultImageContainer').innerHTML = `
-                        <img src="data:image/png;base64,${response.result_img}" alt="Processed Image" class="border border-gray-300 rounded-lg shadow dark:border-gray-700">
+                    resultContainer.innerHTML = `
+                        <div class="relative-container">
+                            <div class="image-container">
+                                <img src="data:image/png;base64,${response.result_img}" alt="Processed Image" class="border border-gray-300 rounded-lg shadow dark:border-gray-700 max-w-md">
+                            </div>
+                            <div class="detection-text">${response.detected_text || "No detection"}</div>
+                        </div>
                     `;
+    
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: document.body.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
                 }
             };
             xhr.send(formData);
         }
-    </script>
+    </script>    
 </body>
 </html>
