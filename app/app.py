@@ -9,7 +9,13 @@ from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads/'
+
+# Set upload folder and ensure it exists
+UPLOAD_FOLDER = 'uploads/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 class Detection:
     def __init__(self):
@@ -70,17 +76,24 @@ def apply_detection():
     if file:
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
 
         try:
+            # Save the uploaded file
+            file.save(file_path)
+            print(f"✅ File saved at: {file_path}")  # Debugging step
+
+            # Read image
             img = cv2.imread(file_path)
             if img is None:
-                raise ValueError("Failed to read the image.")
+                raise ValueError("❌ Failed to read the image.")
 
+            # Resize image for YOLO detection
             img = cv2.resize(img, (640, 640))
 
+            # Run object detection
             img, detection_info = detection.predict_and_detect(img)
 
+            # Encode processed image to base64
             _, buffer = cv2.imencode('.png', img)
             img_base64 = base64.b64encode(buffer).decode('utf-8')
 
@@ -89,7 +102,9 @@ def apply_detection():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
         finally:
-            os.remove(file_path)
+            # Remove file after processing to prevent storage overflow
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
         return jsonify({
             "result_img": img_base64,
