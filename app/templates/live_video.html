@@ -25,6 +25,12 @@
             <p class="mb-8 text-lg font-normal text-gray-500 lg:text-xl dark:text-gray-400 text-center">
                 Experience live object detection with Semaphore Detection powered by SemaREC.
             </p>
+            <div class="max-w-md mx-auto mb-8">
+                <label for="model-select" class="block text-lg font-medium text-gray-700 dark:text-white mb-2">Select Model</label>
+                <select id="model-select" class="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-white">
+                    <option value="" disabled selected>Select a model</option>
+                </select>
+            </div>            
             <div class="relative flex justify-center items-center space-x-8 rtl:space-x-reverse">
                 <div class="relative">
                     <img id="live_video" src="/video_feed" alt="Video Feed" class="border border-gray-300 rounded-lg shadow dark:border-gray-700" width="640" height="480" />
@@ -56,22 +62,51 @@
             </span>
         </div>
     </footer>
-
-    <script src="../static/flowbite/Flowbite.js"></script>
-    <script>
-        function fetchDetectionResult() {
-            fetch('/get_detection_result')
-                .then(response => response.json())
-                .then(data => {
-                    const detectionText = document.getElementById('detection_text');
-                    detectionText.textContent = data.letter || "No detections";
-                })
-                .catch(error => {
-                    console.error('Error fetching detection result:', error);
-                });
-        }
-
-        setInterval(fetchDetectionResult, 1000);
-    </script>
 </body>
 </html>
+
+<script src="../static/flowbite/Flowbite.js"></script>
+<script>
+    fetch("/get-models")
+            .then(response => response.json())
+            .then(models => {
+                const select = document.getElementById("model-select");
+
+                models.forEach(model => {
+                    const option = document.createElement("option");
+                    option.value = model;
+                    option.textContent = model;
+                    if (model === "yolov12.pt") {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Error fetching models:", error);
+            });
+
+    document.getElementById('model-select').addEventListener('change', function () {
+        fetch('/set_model', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ model_name: this.value })
+        });
+    });
+
+    function fetchDetectionResult() {
+        fetch('/get_detection_result')
+            .then(response => response.json())
+            .then(data => {
+                const detectionText = document.getElementById('detection_text');
+                detectionText.textContent = data.letter || "No detections";
+            })
+            .catch(error => {
+                console.error('Error fetching detection result:', error);
+            });
+    }
+
+    setInterval(fetchDetectionResult, 1000);
+</script>
