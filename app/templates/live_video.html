@@ -108,5 +108,29 @@
             });
     }
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const modelSelect = document.getElementById('model-select');
+
+        modelSelect.addEventListener('change', function() {
+            const selectedModel = modelSelect.value;
+            if (selectedModel) {
+                fetch('/set_model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ model_name: selectedModel })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                })
+                .catch(error => {
+                    console.error('Error switching model:', error);
+                });
+            }
+        });
+    });
+
     setInterval(fetchDetectionResult, 1000);
 </script>
