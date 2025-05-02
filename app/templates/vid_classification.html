@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Classification</title>
+    <link href="../static/flowbite/Flowbite.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+    <style>
+        .relative-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .video-container {
+            position: relative;
+        }
+
+        .classification-text {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            transform: translateY(-10px);
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: black;
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+
+    <!-- NAVBAR -->
+    <nav class="bg-white border-gray-200 dark:bg-gray-900">
+        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <img src="../static/images/logo-semarec.png" class="h-8" alt="Logo" />
+                <img src="../static/images/ahg.png" class="h-8" alt="AHG" />
+                <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">SemaREC</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex flex-col items-center justify-center min-h-screen p-6 space-y-8">
+        <div class="max-w-md mx-auto">
+            <label for="model-select" class="block text-lg font-medium text-gray-700 mb-2">Select Model</label>
+            <select id="model-select" class="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-700">
+                <option value="" disabled selected>Select a model</option>
+            </select>
+        </div>
+
+        <div class="w-full max-w-lg bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="flex items-center justify-center w-full p-6">
+                    <label for="video-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:border-gray-600 dark:hover:border-gray-500">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span class="font-semibold">Click to upload</span> or drag a video here
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">MP4, AVI (MAX. 50MB)</p>
+                        </div>
+                        <input id="video-upload" type="file" name="video" accept="video/mp4, video/x-msvideo" class="hidden" required onchange="uploadVideo()">
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <div id="resultVideoContainer" class="flex justify-center items-center text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400">No video uploaded yet.</p>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
+        <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <a href="/" class="flex items-center mb-4 sm:mb-0 space-x-3 rtl:space-x-reverse">
+                    <img src="../static/images/ahg.png" class="h-8" alt="AHG Logo" />
+                    <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">AHG</span>
+                </a>
+                <ul class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-500 sm:mb-0 dark:text-gray-400">
+                    <li>
+                        <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+            <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">
+                © 2025 <a href="https://github.com/AHG-BSCS" class="hover:underline">Al Hans Gaming</a>. All Rights Reserved.
+            </span>
+        </div>
+    </footer>
+</body>
+</html>
