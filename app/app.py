@@ -10,7 +10,6 @@ from ultralytics import YOLO
 
 app = Flask(__name__)
 
-# Set upload folder and ensure it exists
 UPLOAD_FOLDER = 'uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -35,7 +34,7 @@ class Detection:
         for result in results:
             for box in result.boxes:
                 label = result.names[int(box.cls[0])]
-                confidence = float(box.conf[0])  # Get confidence level
+                confidence = float(box.conf[0])
                 detection_info.append({
                     'label': label,
                     'confidence': confidence
@@ -47,7 +46,6 @@ class Detection:
                 cv2.putText(img, f"{label} {confidence:.2f}",
                             (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 10),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), text_thickness)
-        # Update the latest detection
         if detection_info:
             self.latest_detection = detection_info[0]['label']
         else:
@@ -87,24 +85,19 @@ def apply_detection():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
 
     try:
-        # Save the uploaded file
         file.save(file_path)
 
-        # Load the selected model
         model_path = os.path.join("model", model_name)
         detection.model = YOLO(model_path)
 
-        # Read image
         img = cv2.imread(file_path)
         if img is None:
             raise ValueError("Failed to read the image.")
 
         img = cv2.resize(img, (640, 640))
 
-        # Run object detection
         img, detection_info = detection.predict_and_detect(img)
 
-        # Encode processed image to base64
         _, buffer = cv2.imencode('.png', img)
         img_base64 = base64.b64encode(buffer).decode('utf-8')
 
@@ -128,6 +121,10 @@ def live_video():
 @app.route('/img_classification.html')
 def img_classification():
     return render_template('img_classification.html')
+
+@app.route('/vid_classification.html')
+def vid_classification():
+    return render_template('vid_classification.html')
 
 @app.route('/get_detection_result')
 def get_detection_result():
