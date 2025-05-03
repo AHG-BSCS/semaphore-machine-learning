@@ -3,13 +3,16 @@ import cv2
 import os
 import time
 import base64
+import threading
+import atexit
 import webbrowser
+import signal
+import sys
 from flask import Flask, jsonify, request, render_template, Response
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
 app = Flask(__name__)
-
 UPLOAD_FOLDER = 'uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -18,7 +21,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 class Detection:
     def __init__(self):
-        self.model = YOLO(r"model/yolov12.pt")
+        self.model = YOLO("model/yolov12.pt")
         self.latest_detection = "No detections"
 
     def predict(self, img, classes=[], conf=0.5):
@@ -35,21 +38,15 @@ class Detection:
             for box in result.boxes:
                 label = result.names[int(box.cls[0])]
                 confidence = float(box.conf[0])
-                detection_info.append({
-                    'label': label,
-                    'confidence': confidence
-                })
+                detection_info.append({'label': label, 'confidence': confidence})
                 cv2.rectangle(img, (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
-                            (int(box.xyxy[0][2]), int(box.xyxy[0][3])), (0, 255, 0), rectangle_thickness)
+                              (int(box.xyxy[0][2]), int(box.xyxy[0][3])), (0, 255, 0), rectangle_thickness)
                 cv2.rectangle(img, (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 30), 
-                            (int(box.xyxy[0][0]) + 120, int(box.xyxy[0][1]) - 5), (0, 255, 0), -1)
+                              (int(box.xyxy[0][0]) + 120, int(box.xyxy[0][1]) - 5), (0, 255, 0), -1)
                 cv2.putText(img, f"{label} {confidence:.2f}",
                             (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 10),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), text_thickness)
-        if detection_info:
-            self.latest_detection = detection_info[0]['label']
-        else:
-            self.latest_detection = "No detections"
+        self.latest_detection = detection_info[0]['label'] if detection_info else "No detections"
         return img, detection_info
 
     def detect_from_image(self, image):
@@ -57,6 +54,56 @@ class Detection:
         return result_img
 
 detection = Detection()
+
+class AsyncDetector(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.cap = cv2.VideoCapture(0)
+        self.lock = threading.Lock()
+        self.frame = None
+        self.running = True
+
+    def run(self):
+        while self.running:
+            ret, frame = self.cap.read()
+            if not ret:
+                continue
+            frame = cv2.resize(frame, (640, 640))
+            processed_frame, _ = detection.predict_and_detect(frame)
+            with self.lock:
+                self.frame = processed_frame
+
+    def get_frame(self):
+        with self.lock:
+            if self.frame is None:
+                return None
+            _, buffer = cv2.imencode('.jpg', self.frame)
+            return buffer.tobytes()
+
+    def stop(self):
+        self.running = False
+        self.cap.release()
+
+detector = None
+
+@atexit.register
+def cleanup():
+    detector.stop()
+
+@app.route('/start_camera')
+def start_camera():
+    global detector
+    if detector is None or not detector.is_alive():
+        detector = AsyncDetector()
+        detector.start()
+    return jsonify({"status": "Camera started"})
+
+@app.route('/stop_camera')
+def stop_camera():
+    global detector
+    if detector is not None:
+        detector.stop()
+    return jsonify({"status": "Camera stopped"})
 
 @app.route('/')
 def index():
@@ -75,34 +122,22 @@ def apply_detection():
 
     file = request.files['image']
     model_name = request.form.get('model_name')
-
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if not model_name:
-        return jsonify({"error": "No model selected"}), 400
+    if file.filename == '' or not model_name:
+        return jsonify({"error": "Invalid input"}), 400
 
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
 
     try:
         file.save(file_path)
-
-        model_path = os.path.join("model", model_name)
-        detection.model = YOLO(model_path)
-
+        detection.model = YOLO(os.path.join("model", model_name))
         img = cv2.imread(file_path)
         if img is None:
             raise ValueError("Failed to read the image.")
-
         img = cv2.resize(img, (640, 640))
-
-        img, detection_info = detection.predict_and_detect(img)
-
+        img, _ = detection.predict_and_detect(img)
         _, buffer = cv2.imencode('.png', img)
         img_base64 = base64.b64encode(buffer).decode('utf-8')
-
-        detected_text = detection.latest_detection 
-
+        detected_text = detection.latest_detection
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -111,7 +146,7 @@ def apply_detection():
 
     return jsonify({
         "result_img": img_base64,
-        "detected_text": detected_text 
+        "detected_text": detected_text
     }), 200
 
 @app.route('/live_video.html')
@@ -134,35 +169,30 @@ def get_detection_result():
 def set_model():
     data = request.get_json()
     model_name = data.get('model_name')
-
     if not model_name:
         return jsonify({"error": "No model name provided"}), 400
-
-    model_path = os.path.join("model", model_name)
     try:
-        detection.model = YOLO(model_path)
+        detection.model = YOLO(os.path.join("model", model_name))
         return jsonify({"message": f"Model switched to {model_name}"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def gen_frames():
-    cap = cv2.VideoCapture(0)
-    while cap.isOpened():
-        ret, frame = cap.read()
-        frame = cv2.resize(frame, (640, 640))
-        if frame is None:
-            break
-        frame, _ = detection.predict_and_detect(frame)
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
 @app.route('/video_feed')
 def video_feed():
+    def gen_frames():
+        while True:
+            frame = detector.get_frame()
+            if frame:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.03)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def signal_handler(sig, frame):
+    detector.stop()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
     webbrowser.open("http://localhost:8000/")

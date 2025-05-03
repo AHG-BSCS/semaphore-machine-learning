@@ -1,136 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semaphore Detection</title>
-    <link href="..\static\flowbite\Flowbite.css"  rel="stylesheet" />
-    <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Semaphore Detection</title>
+  <link href="../static/flowbite/Flowbite.css" rel="stylesheet" />
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
 </head>
 <body class="bg-white dark:bg-gray-900">
 
-    <nav class="bg-white border-gray-200 dark:bg-gray-900">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-            <img src="../static/images/logo-semarec.png" class="h-8" alt="AHG" />
-            <img src="../static/images/ahg.png" class="h-8" alt="AHG" />
-            <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">SemaREC</span>
+  <nav class="bg-white border-gray-200 dark:bg-gray-900">
+    <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+      <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+        <img src="../static/images/logo-semarec.png" class="h-8" alt="SemaREC" />
+        <img src="../static/images/ahg.png" class="h-8" alt="AHG" />
+        <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">SemaREC</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="bg-white dark:bg-gray-900">
+    <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+      <h1 class="mb-4 text-4xl font-extrabold text-center text-gray-900 dark:text-white">
+        Real-time Semaphore Detection
+      </h1>
+      <p class="mb-8 text-lg text-center text-gray-500 dark:text-gray-400">
+        Experience object detection powered by SemaREC.
+      </p>
+
+      <div class="max-w-md mx-auto mb-8">
+        <label for="model-select" class="block mb-2 text-lg font-medium text-gray-700 dark:text-white">
+          Select Model
+        </label>
+        <select id="model-select" class="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-white">
+          <option value="" disabled selected>Select a model</option>
+        </select>
+      </div>
+
+      <div class="relative flex justify-center items-center">
+        <div class="relative">
+            <img id="live_video" src="/video_feed" alt="Video Feed" class="border border-gray-300 rounded-lg shadow dark:border-gray-700" width="640" height="480" />
+        </div>
+        <p id="detection_text" 
+           class="absolute top-1/2 right-0 transform -translate-y-1/2 text-4xl font-bold text-gray-900 dark:text-white">
+            No detections
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
+    <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+      <div class="sm:flex sm:items-center sm:justify-between">
+        <a href="/" class="flex items-center mb-4 sm:mb-0 space-x-3 rtl:space-x-reverse">
+          <img src="../static/images/ahg.png" class="h-8" alt="AHG Logo" />
+          <span class="text-2xl font-semibold dark:text-white">AHG</span>
         </a>
-        </div>
-    </nav>
+        <ul class="flex flex-wrap items-center text-sm font-medium text-gray-500 dark:text-gray-400">
+          <li>
+            <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Contact</a>
+          </li>
+        </ul>
+      </div>
+      <hr class="my-6 border-gray-200 dark:border-gray-700" />
+      <span class="block text-sm text-gray-500 text-center dark:text-gray-400">
+        © 2025 <a href="https://github.com/AHG-BSCS" class="hover:underline">Al Hans Gaming</a>. All Rights Reserved.
+      </span>
+    </div>
+  </footer>
 
-    <section class="bg-white dark:bg-gray-900">
-        <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
-            <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white text-center">Real-time Semaphore Detection</h1>
-            <p class="mb-8 text-lg font-normal text-gray-500 lg:text-xl dark:text-gray-400 text-center">
-                Experience live object detection with Semaphore Detection powered by SemaREC.
-            </p>
-            <div class="max-w-md mx-auto mb-8">
-                <label for="model-select" class="block text-lg font-medium text-gray-700 dark:text-white mb-2">Select Model</label>
-                <select id="model-select" class="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-white">
-                    <option value="" disabled selected>Select a model</option>
-                </select>
-            </div>            
-            <div class="relative flex justify-center items-center space-x-8 rtl:space-x-reverse">
-                <div class="relative">
-                    <img id="live_video" src="/video_feed" alt="Video Feed" class="border border-gray-300 rounded-lg shadow dark:border-gray-700" width="640" height="480" />
-                </div>
-                <p id="detection_text" 
-                   class="absolute top-1/2 right-0 transform -translate-y-1/2 text-4xl font-bold text-gray-900 dark:text-white">
-                    No detections
-                </p>
-            </div>            
-        </div>
-    </section>    
-
-    <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
-        <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
-            <div class="sm:flex sm:items-center sm:justify-between">
-                <a href="/" class="flex items-center mb-4 sm:mb-0 space-x-3 rtl:space-x-reverse">
-                    <img src="../static/images/ahg.png" class="h-8" alt="AHG Logo" />
-                    <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">AHG</span>
-                </a>
-                <ul class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-500 sm:mb-0 dark:text-gray-400">
-                    <li>
-                        <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Contact</a>
-                    </li>
-                </ul>
-            </div>
-            <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
-            <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">
-                © 2025 <a href="https://github.com/AHG-BSCS" target="_blank" class="hover:underline">Al Hans Gaming</a>. All Rights Reserved.
-            </span>
-        </div>
-    </footer>
-</body>
-</html>
-
-<script src="../static/flowbite/Flowbite.js"></script>
-<script>
+  <script src="../static/flowbite/Flowbite.js"></script>
+  <script>
     fetch("/get-models")
-            .then(response => response.json())
-            .then(models => {
-                const select = document.getElementById("model-select");
-
-                models.forEach(model => {
-                    const option = document.createElement("option");
-                    option.value = model;
-                    option.textContent = model;
-                    if (model === "yolov12.pt") {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error("Error fetching models:", error);
-            });
+      .then(response => response.json())
+      .then(models => {
+        const select = document.getElementById("model-select");
+        models.forEach(model => {
+          const option = document.createElement("option");
+          option.value = model;
+          option.textContent = model;
+          if (model === "yolov12.pt") {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+      });
 
     document.getElementById('model-select').addEventListener('change', function () {
-        fetch('/set_model', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ model_name: this.value })
-        });
+      fetch('/set_model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model_name: this.value })
+      })
+      .then(response => response.json())
+      .then(data => console.log(data.message || data.error));
     });
+    
+    function stopCamera() {
+        document.getElementById('live_video').src = '';
+        fetch('/stop_camera');
+    }
+
+    window.addEventListener('beforeunload', function () {
+        stopCamera();
+    });
+
+    function startCamera() {
+        fetch('/start_camera').then(() => {
+        document.getElementById('live_video').src = '/video_feed';
+        });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+        startCamera();
+        } else {
+        stopCamera();
+        }
+    });
+
+    startCamera();
 
     function fetchDetectionResult() {
         fetch('/get_detection_result')
-            .then(response => response.json())
-            .then(data => {
-                const detectionText = document.getElementById('detection_text');
-                detectionText.textContent = data.letter || "No detections";
-            })
-            .catch(error => {
-                console.error('Error fetching detection result:', error);
-            });
+        .then(response => response.json())
+        .then(data => {
+            const detectionText = document.getElementById('detection_text');
+            detectionText.textContent = data.letter || "No detections";
+        });
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const modelSelect = document.getElementById('model-select');
-
-        modelSelect.addEventListener('change', function() {
-            const selectedModel = modelSelect.value;
-            if (selectedModel) {
-                fetch('/set_model', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ model_name: selectedModel })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data.message);
-                })
-                .catch(error => {
-                    console.error('Error switching model:', error);
-                });
-            }
-        });
-    });
-
     setInterval(fetchDetectionResult, 1000);
-</script>
+  </script>  
+</body>
+</html>
