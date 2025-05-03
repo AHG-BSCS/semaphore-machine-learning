@@ -88,7 +88,9 @@ detector = None
 
 @atexit.register
 def cleanup():
-    detector.stop()
+    global detector
+    if detector is not None and detector.is_alive():
+        detector.stop()
 
 @app.route('/start_camera')
 def start_camera():
@@ -189,7 +191,9 @@ def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def signal_handler(sig, frame):
-    detector.stop()
+    global detector
+    if detector is not None and detector.is_alive():
+        detector.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
