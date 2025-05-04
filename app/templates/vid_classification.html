@@ -5,46 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Classification</title>
     <link href="../static/flowbite/Flowbite.css" rel="stylesheet">
+    <link href="../static/styles/styles_vidclassification.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
-    <style>
-        .relative-container {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-        }
-
-        .video-container {
-            position: relative;
-        }
-
-        .classification-text {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            transform: translateY(-10px);
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: black;
-            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.7);
-            white-space: nowrap;
-        }
-
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    
 </head>
 <body class="bg-gray-100 dark:bg-gray-900">
 
@@ -113,31 +76,6 @@
         </div>
     </footer>
 
-    <script>
-        fetch("/get-models")
-          .then(response => response.json())
-          .then(models => {
-            const select = document.getElementById("model-select");
-            models.forEach(model => {
-              const option = document.createElement("option");
-              option.value = model;
-              option.textContent = model;
-              if (model === "yolov12.pt") {
-                option.selected = true;
-              }
-              select.appendChild(option);
-            });
-          });
-    
-        document.getElementById('model-select').addEventListener('change', function () {
-          fetch('/set_model', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model_name: this.value })
-          })
-          .then(response => response.json())
-          .then(data => console.log(data.message || data.error));
-        });
-        </script>
+    <script src="../static/js/Classify_VIDEO.js"></script>
 </body>
 </html>
