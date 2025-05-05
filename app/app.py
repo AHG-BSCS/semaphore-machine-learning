@@ -8,7 +8,8 @@ import atexit
 import webbrowser
 import signal
 import sys
-from flask import Flask, jsonify, request, render_template, Response
+import re
+from flask import Flask, abort, jsonify, request, render_template, Response, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
@@ -189,6 +190,54 @@ def video_feed():
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             time.sleep(0.03)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_classification', methods=['POST'])
+def video_classification():
+    if 'video' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['video']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+    output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_video.mp4')
+
+    try:
+        file.save(file_path)
+        video_capture = cv2.VideoCapture(file_path)
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = video_capture.get(cv2.CAP_PROP_FPS)
+        frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
+
+        while True:
+            ret, frame = video_capture.read()
+            if not ret:
+                break
+
+            processed_frame, _ = detection.predict_and_detect(frame)
+            out.write(processed_frame)
+
+        video_capture.release()
+        out.release()
+
+        return jsonify({
+            "message": "Video processed successfully",
+            "video_url": f"/download/processed_video.mp4"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+@app.route('/download/<filename>')
+def download_video(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 def signal_handler(sig, frame):
     global detector

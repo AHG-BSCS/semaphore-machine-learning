@@ -50,8 +50,13 @@
             </form>
         </div>
 
+        <div id="loadingSpinner" class="hidden flex flex-col items-center space-y-2">
+            <div class="loading-spinner"></div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Processing your video...</p>
+        </div>
+
         <div id="resultVideoContainer" class="flex justify-center items-center text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">No video uploaded yet.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400" id="video-placeholder">No video uploaded yet.</p>
         </div>
     </main>
 
