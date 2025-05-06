@@ -55,9 +55,16 @@
             <p class="text-sm text-gray-500 dark:text-gray-400">Processing your video...</p>
         </div>
 
-        <div id="resultVideoContainer" class="flex justify-center items-center text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400" id="video-placeholder">No video uploaded yet.</p>
-        </div>
+        <div id="resultVideoContainer" class="flex justify-center items-center text-center space-x-4">
+            <p id="video-placeholder" class="text-sm text-gray-500 dark:text-gray-400">
+              No video uploaded yet.
+            </p>
+          
+            <video id="processed-video" controls height="150" class="hidden rounded-lg shadow-lg">
+              <source id="processed-video-source" src="" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>          
     </main>
 
     <!-- FOOTER -->

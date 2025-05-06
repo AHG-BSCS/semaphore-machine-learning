@@ -9,7 +9,7 @@ import webbrowser
 import signal
 import sys
 import re
-from flask import Flask, abort, jsonify, request, render_template, Response, send_file, send_from_directory
+from flask import Flask, jsonify, request, render_template, Response, send_from_directory
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
@@ -32,7 +32,7 @@ class Detection:
             results = self.model.predict(img, conf=conf)
         return results
 
-    def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1):
+    def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1, vid=False):
         results = self.predict(img, classes, conf=conf)
         detection_info = []
         for result in results:
@@ -47,6 +47,14 @@ class Detection:
                 cv2.putText(img, f"{label} {confidence:.2f}",
                             (int(box.xyxy[0][0]), int(box.xyxy[0][1]) - 10),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), text_thickness)
+                if vid:
+                    frame_height, frame_width = img.shape[:2]
+                    text = label
+                    (text_width, text_height), _ = cv2.getTextSize("W", cv2.FONT_HERSHEY_PLAIN, 3, 3)
+                    x = frame_width - text_width - 20
+                    y = frame_height // 2 + text_height // 2
+                    cv2.rectangle(img, (x - 10, y - text_height - 10), (x + text_width + 10, y + 10), (0, 0, 0), -1)
+                    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, 3, (255, 255, 255), 3)
         self.latest_detection = detection_info[0]['label'] if detection_info else "No detections"
         return img, detection_info
 
@@ -200,34 +208,46 @@ def video_classification():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_video.mp4')
 
     try:
         file.save(file_path)
-        video_capture = cv2.VideoCapture(file_path)
 
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_capture = cv2.VideoCapture(file_path)
+        if not video_capture.isOpened():
+            return jsonify({"error": "Failed to open uploaded video."}), 500
+
         fps = video_capture.get(cv2.CAP_PROP_FPS)
-        frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
+        width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        if fps == 0 or width == 0 or height == 0:
+            video_capture.release()
+            return jsonify({"error": "Invalid video properties."}), 500
+
+        fourcc = cv2.VideoWriter_fourcc(*'X264')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         while True:
             ret, frame = video_capture.read()
-            if not ret:
+            if not ret or frame is None:
                 break
-
-            processed_frame, _ = detection.predict_and_detect(frame)
+            processed_frame, _ = detection.predict_and_detect(frame, vid=True)
             out.write(processed_frame)
+            time.sleep(0.03)
 
         video_capture.release()
         out.release()
 
+        if not os.path.exists(output_path):
+            return jsonify({"error": "Processed video not saved."}), 500
+
         return jsonify({
             "message": "Video processed successfully",
-            "video_url": f"/download/processed_video.mp4"
-        })
+            "video_url": "/uploads/processed_video.mp4"
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -235,9 +255,10 @@ def video_classification():
         if os.path.exists(file_path):
             os.remove(file_path)
 
-@app.route('/download/<filename>')
-def download_video(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/uploads/<path:filename>')
+def serve_video(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype='video/mp4', as_attachment=False)
 
 def signal_handler(sig, frame):
     global detector
