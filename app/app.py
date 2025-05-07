@@ -24,14 +24,14 @@ class Detection:
         self.model = YOLO("model/yolov12.pt")
         self.latest_detection = "No detections"
 
-    def predict(self, img, classes=[], conf=0.6):
+    def predict(self, img, classes=[], conf=0.5):
         if classes:
             results = self.model.predict(img, classes=classes, conf=conf)
         else:
             results = self.model.predict(img, conf=conf)
         return results
 
-    def predict_and_detect(self, img, classes=[], conf=0.6, rectangle_thickness=2, text_thickness=1, vid=False):
+    def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1, vid=False):
         results = self.predict(img, classes, conf=conf)
         detection_info = []
         for result in results:
@@ -58,7 +58,7 @@ class Detection:
         return img, detection_info
 
     def detect_from_image(self, image):
-        result_img, _ = self.predict_and_detect(image, classes=[], conf=0.6)
+        result_img, _ = self.predict_and_detect(image, classes=[], conf=0.5)
         return result_img
 
 detection = Detection()
@@ -235,7 +235,7 @@ def video_classification():
                 break
 
             resized_frame = cv2.resize(frame, (640, 640))
-            processed_frame, _ = detection.predict_and_detect(resized_frame, vid=False)
+            processed_frame, _ = detection.predict_and_detect(resized_frame, vid=True)
             processed_frame = cv2.resize(processed_frame, (width, height))
 
             out.write(processed_frame)

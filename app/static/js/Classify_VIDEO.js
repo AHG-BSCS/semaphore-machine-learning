@@ -46,6 +46,14 @@ function uploadVideo() {
   const formData = new FormData(document.getElementById('uploadForm'));
   const loadingSpinner = document.getElementById('loadingSpinner');
   const placeholder = document.getElementById('video-placeholder');
+  const video = document.getElementById('processed-video');
+  const source = document.getElementById('processed-video-source');
+
+  document.getElementById('video-upload').value = '';
+
+  video.classList.add('hidden');
+  source.src = '';
+  video.load();
 
   placeholder.classList.add('hidden');
   loadingSpinner.classList.remove('hidden');
@@ -81,7 +89,7 @@ function displayProcessedVideo(videoUrl) {
 
   setTimeout(() => {
     video.scrollIntoView({ behavior: 'smooth' });
-  }, 1000);
+  }, 750);
 
   video.play();
 }
