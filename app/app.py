@@ -8,7 +8,6 @@ import atexit
 import webbrowser
 import signal
 import sys
-import re
 from flask import Flask, jsonify, request, render_template, Response, send_from_directory
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
@@ -25,14 +24,14 @@ class Detection:
         self.model = YOLO("model/yolov12.pt")
         self.latest_detection = "No detections"
 
-    def predict(self, img, classes=[], conf=0.5):
+    def predict(self, img, classes=[], conf=0.6):
         if classes:
             results = self.model.predict(img, classes=classes, conf=conf)
         else:
             results = self.model.predict(img, conf=conf)
         return results
 
-    def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1, vid=False):
+    def predict_and_detect(self, img, classes=[], conf=0.6, rectangle_thickness=2, text_thickness=1, vid=False):
         results = self.predict(img, classes, conf=conf)
         detection_info = []
         for result in results:
@@ -59,7 +58,7 @@ class Detection:
         return img, detection_info
 
     def detect_from_image(self, image):
-        result_img, _ = self.predict_and_detect(image, classes=[], conf=0.5)
+        result_img, _ = self.predict_and_detect(image, classes=[], conf=0.6)
         return result_img
 
 detection = Detection()
@@ -227,22 +226,22 @@ def video_classification():
             video_capture.release()
             return jsonify({"error": "Invalid video properties."}), 500
 
-        fourcc = cv2.VideoWriter_fourcc(*'X264')
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         while True:
             ret, frame = video_capture.read()
             if not ret or frame is None:
                 break
-            processed_frame, _ = detection.predict_and_detect(frame, vid=True)
+
+            resized_frame = cv2.resize(frame, (640, 640))
+            processed_frame, _ = detection.predict_and_detect(resized_frame, vid=False)
+            processed_frame = cv2.resize(processed_frame, (width, height))
+
             out.write(processed_frame)
-            time.sleep(0.03)
 
         video_capture.release()
         out.release()
-
-        if not os.path.exists(output_path):
-            return jsonify({"error": "Processed video not saved."}), 500
 
         return jsonify({
             "message": "Video processed successfully",
@@ -251,10 +250,13 @@ def video_classification():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     finally:
         if os.path.exists(file_path):
-            os.remove(file_path)
-
+            try:
+                os.remove(file_path)
+            except PermissionError:
+                print("Could not delete input video file; still in use.")
 
 @app.route('/uploads/<path:filename>')
 def serve_video(filename):
