@@ -216,6 +216,11 @@ def video_feed():
             time.sleep(0.03)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+video_progress = {
+    "total": 0,
+    "current": 0
+}
+
 # route to save processed video and display to user
 @app.route('/video_classification', methods=['POST'])
 def video_classification():
@@ -248,6 +253,10 @@ def video_classification():
         fourcc = cv2.VideoWriter_fourcc(*'avc1')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
+        frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        video_progress["total"] = frame_count
+        video_progress["current"] = 0
+
         while True:
             ret, frame = video_capture.read()
             if not ret or frame is None:
@@ -258,7 +267,9 @@ def video_classification():
             processed_frame = cv2.resize(processed_frame, (width, height))
 
             out.write(processed_frame)
+            video_progress["current"] += 1
 
+        video_progress["current"] = video_progress["total"]
         video_capture.release()
         out.release()
 
@@ -271,6 +282,9 @@ def video_classification():
         return jsonify({"error": str(e)}), 500
 
     finally:
+        video_progress["total"] = 0
+        video_progress["current"] = 0
+        
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -281,6 +295,15 @@ def video_classification():
 @app.route('/uploads/<path:filename>')
 def serve_video(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype='video/mp4', as_attachment=False)
+
+@app.route('/video_progress')
+def video_progress_status():
+    total = video_progress.get("total", 0)
+    current = video_progress.get("current", 0)
+    if total == 0:
+        return jsonify({"progress": 0})
+    percent = int((current / total) * 100)
+    return jsonify({"progress": percent})
 
 def signal_handler(sig, frame):
     global detector

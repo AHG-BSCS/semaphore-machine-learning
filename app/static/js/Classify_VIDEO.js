@@ -23,25 +23,6 @@ document.getElementById('model-select').addEventListener('change', function () {
   .then(data => console.log(data.message || data.error));
 });
 
-function processVideo(videoFile) {
-  const formData = new FormData();
-  formData.append('video', videoFile);
-
-  fetch('/video_classification', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.frame_results) {
-      displayVideoClassificationResults(data.frame_results);
-    }
-  })
-  .catch(error => {
-    console.error('Error uploading video:', error);
-  });
-}
-
 function uploadVideo() {
   const formData = new FormData(document.getElementById('uploadForm'));
   const loadingSpinner = document.getElementById('loadingSpinner');
@@ -52,11 +33,14 @@ function uploadVideo() {
   document.getElementById('video-upload').value = '';
 
   video.classList.add('hidden');
+  video.pause();
   source.src = '';
   video.load();
 
   placeholder.classList.add('hidden');
   loadingSpinner.classList.remove('hidden');
+
+  startProgressBar();
 
   fetch('/video_classification', {
     method: 'POST',
@@ -83,7 +67,7 @@ function displayProcessedVideo(videoUrl) {
 
   spinner.classList.add('hidden');
 
-  source.src = videoUrl;
+  source.src = `${videoUrl}?t=${new Date().getTime()}`;
   video.load();
   video.classList.remove('hidden');
 
@@ -92,4 +76,29 @@ function displayProcessedVideo(videoUrl) {
   }, 750);
 
   video.play();
+}
+
+function startProgressBar() {
+  const loadingSpinner = document.getElementById('loadingSpinner');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-percent');
+
+  const interval = setInterval(() => {
+    fetch('/video_progress')
+      .then(response => response.json())
+      .then(data => {
+        const progress = data.progress;
+        progressBar.value = progress;
+        progressText.textContent = `${progress}%`;
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            loadingSpinner.classList.add('hidden');
+          }, 500);
+        }
+      });
+  }, 1000);
+
+  return interval;
 }

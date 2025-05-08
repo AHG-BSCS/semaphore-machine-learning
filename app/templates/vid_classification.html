@@ -51,8 +51,9 @@
         </div>
 
         <div id="loadingSpinner" class="hidden flex flex-col items-center space-y-2">
-            <div class="loading-spinner"></div>
             <p class="text-sm text-gray-500 dark:text-gray-400">Processing your video...</p>
+            <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+            <span id="progress-percent" class="text-sm text-gray-500 dark:text-gray-400">0%</span>
         </div>
 
         <div id="resultVideoContainer" class="flex justify-center items-center text-center space-x-4">
