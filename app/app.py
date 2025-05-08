@@ -1,3 +1,4 @@
+# import necessary dependencies which can be installed via requirements.txt
 import numpy as np
 import cv2
 import os
@@ -12,18 +13,22 @@ from flask import Flask, jsonify, request, render_template, Response, send_from_
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
+# upload folder function
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# only if upload folder does not exist, create one
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+# default model is yolov12 unless changed by the user
 class Detection:
     def __init__(self):
         self.model = YOLO("model/yolov12.pt")
         self.latest_detection = "No detections"
 
+    # prediction logic that accepts all confidence levels that are only 50% or greater
     def predict(self, img, classes=[], conf=0.5):
         if classes:
             results = self.model.predict(img, classes=classes, conf=conf)
@@ -31,6 +36,7 @@ class Detection:
             results = self.model.predict(img, conf=conf)
         return results
 
+    # bounding boxes
     def predict_and_detect(self, img, classes=[], conf=0.5, rectangle_thickness=2, text_thickness=1, vid=False):
         results = self.predict(img, classes, conf=conf)
         detection_info = []
@@ -63,6 +69,7 @@ class Detection:
 
 detection = Detection()
 
+# capture video
 class AsyncDetector(threading.Thread):
     def __init__(self):
         super().__init__()
@@ -100,6 +107,7 @@ def cleanup():
     if detector is not None and detector.is_alive():
         detector.stop()
 
+# start user's camera
 @app.route('/start_camera')
 def start_camera():
     global detector
@@ -108,6 +116,7 @@ def start_camera():
         detector.start()
     return jsonify({"status": "Camera started"})
 
+# stops user's camera
 @app.route('/stop_camera')
 def stop_camera():
     global detector
@@ -115,16 +124,19 @@ def stop_camera():
         detector.stop()
     return jsonify({"status": "Camera stopped"})
 
+# index page route
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# obtaining models dynamically in the /model directory
 @app.route('/get-models')
 def get_models():
     model_folder = "model/"
     models = [f for f in os.listdir(model_folder) if f.endswith('.pt')]
     return jsonify(models)
 
+# object detection route
 @app.route('/object-detection/', methods=['POST'])
 def apply_detection():
     if 'image' not in request.files:
@@ -159,22 +171,27 @@ def apply_detection():
         "detected_text": detected_text
     }), 200
 
+# route for live detection using user's built-in camera
 @app.route('/live_video.html')
 def live_video():
     return render_template('live_video.html')
 
+# route for image classification
 @app.route('/img_classification.html')
 def img_classification():
     return render_template('img_classification.html')
 
+# route for video classification
 @app.route('/vid_classification.html')
 def vid_classification():
     return render_template('vid_classification.html')
 
+# get detection result and display letter
 @app.route('/get_detection_result')
 def get_detection_result():
     return jsonify({'letter': detection.latest_detection})
 
+# set model that user specified
 @app.route('/set_model', methods=['POST'])
 def set_model():
     data = request.get_json()
@@ -187,6 +204,7 @@ def set_model():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# video feed route
 @app.route('/video_feed')
 def video_feed():
     def gen_frames():
@@ -198,6 +216,7 @@ def video_feed():
             time.sleep(0.03)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# route to save processed video and display to user
 @app.route('/video_classification', methods=['POST'])
 def video_classification():
     if 'video' not in request.files:
@@ -258,6 +277,7 @@ def video_classification():
             except PermissionError:
                 print("Could not delete input video file; still in use.")
 
+# serve video
 @app.route('/uploads/<path:filename>')
 def serve_video(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype='video/mp4', as_attachment=False)
@@ -270,6 +290,7 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+# flask server
 if __name__ == '__main__':
     webbrowser.open("http://localhost:8000/")
     time.sleep(1)
